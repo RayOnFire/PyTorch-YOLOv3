@@ -15,7 +15,6 @@ import time
 import datetime
 import argparse
 
-
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets
@@ -23,17 +22,15 @@ from torchvision import transforms
 from torch.autograd import Variable
 import torch.optim as optim
 
-from apex import amp
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=100, help="number of epochs")
-    parser.add_argument("--batch_size", type=int, default=6, help="size of each image batch")
-    parser.add_argument("--gradient_accumulations", type=int, default=1, help="number of gradient accums before step")
+    parser.add_argument("--batch_size", type=int, default=8, help="size of each image batch")
+    parser.add_argument("--gradient_accumulations", type=int, default=2, help="number of gradient accums before step")
     parser.add_argument("--model_def", type=str, default="config/yolov3.cfg", help="path to model definition file")
     parser.add_argument("--data_config", type=str, default="config/coco.data", help="path to data config file")
     parser.add_argument("--pretrained_weights", type=str, help="if specified starts from checkpoint model")
-    parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
+    parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
     parser.add_argument("--img_size", type=int, default=416, help="size of each image dimension")
     parser.add_argument("--checkpoint_interval", type=int, default=1, help="interval between saving model weights")
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
@@ -79,9 +76,6 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters())
 
-    model, optimizer = amp.initialize(model, optimizer, opt_level="O2", verbosity=0)
-    # model.to(device)
-
     metrics = [
         "grid_size",
         "loss",
@@ -109,9 +103,7 @@ if __name__ == "__main__":
             targets = Variable(targets.to(device), requires_grad=False)
 
             loss, outputs = model(imgs, targets)
-            # loss.backward()
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
+            loss.backward()
 
             if batches_done % opt.gradient_accumulations:
                 # Accumulates gradient before each step

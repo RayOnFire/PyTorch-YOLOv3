@@ -123,8 +123,7 @@ class YOLOLayer(nn.Module):
     def compute_grid_offsets(self, grid_size, cuda=True):
         self.grid_size = grid_size
         g = self.grid_size
-        # FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-        FloatTensor = torch.cuda.HalfTensor if cuda else torch.HalfTensor
+        FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
         self.stride = self.img_dim / self.grid_size
         # Calculate offsets for each grid
         self.grid_x = torch.arange(g).repeat(g, 1).view([1, 1, g, g]).type(FloatTensor)
@@ -136,8 +135,7 @@ class YOLOLayer(nn.Module):
     def forward(self, x, targets=None, img_dim=None):
 
         # Tensors for cuda support
-        # FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
-        FloatTensor = torch.cuda.HalfTensor if x.is_cuda else torch.HalfTensor
+        FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
         LongTensor = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
         ByteTensor = torch.cuda.ByteTensor if x.is_cuda else torch.ByteTensor
 
@@ -205,9 +203,9 @@ class YOLOLayer(nn.Module):
             cls_acc = 100 * class_mask[obj_mask].mean()
             conf_obj = pred_conf[obj_mask].mean()
             conf_noobj = pred_conf[noobj_mask].mean()
-            conf50 = (pred_conf > 0.5).half()
-            iou50 = (iou_scores > 0.5).half()
-            iou75 = (iou_scores > 0.75).half()
+            conf50 = (pred_conf > 0.5).float()
+            iou50 = (iou_scores > 0.5).float()
+            iou75 = (iou_scores > 0.75).float()
             detected_mask = conf50 * class_mask * tconf
             precision = torch.sum(iou50 * detected_mask) / (conf50.sum() + 1e-16)
             recall50 = torch.sum(iou50 * detected_mask) / (obj_mask.sum() + 1e-16)
